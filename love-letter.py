@@ -132,6 +132,7 @@ class Player:
         self.cards = CardSet.full()
         self.next_card = None
         self.out = False
+        self.handmaiden = False
         
     def __str__(self):
         return self.name
@@ -173,7 +174,9 @@ class Observer:
             
         if player.next_card is None:
             player.next_card = CardSet(self.deck_set)
-            
+
+        player.handmaiden = False
+        
         if player.cards.contains(card):
             player.cards = player.next_card
 
@@ -203,6 +206,8 @@ class Observer:
                     winner.cards.clear(exclude=other_card)
                 else:
                     winner.cards.clear(cards=range(Cards.GUARD, discard + 1))
+        elif card == Cards.HANDMAIDEN:
+            player.handmaiden = True
         elif card == Cards.PRINCE:
             self._discard(discard)
             if discard == Cards.PRINCESS:
@@ -272,58 +277,104 @@ class LowballAgent(Agent):
         player = None
         card = None
         certainty = 0
+        fallback = None
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-            
+         
             (c, cert) = p.cards.most_likely(exclude_card)
+            if fallback is None:
+                fallback = (p.number, c, cert)
+        
+            if p.handmaiden:
+                continue
+
             if cert > certainty:
                 player = p.number
                 card = c
                 certainty = cert
-        return (player, card, certainty)
+                
+        if player:
+            return (player, card, certainty)
+        else:
+            return fallback
 
     def _least_likely(self, exclude_card=None):
         player = None
         card = None
         certainty = 10
+        fallback = None
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-            
+           
             (c, cert) = p.cards.most_likely(exclude_card)
+
+            if fallback is None:
+                fallback = (p.number, c, cert)
+
+            if p.handmaiden:
+                continue
+
             if cert < certainty:
                 player = p.number
                 card = c
                 certainty = cert
-        return (player, card, certainty)
+                
+        if player:
+            return (player, card, certainty)
+        else:
+            return fallback
 
     def _most_likely_less_than(self, card):
         player = None
         certainty = 0
+        fallback = None
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-            
+                        
             cert = p.cards.chance_less_than(card)
+
+            if fallback is None:
+                fallback = (p.number, cert)
+
+            if p.handmaiden:
+                continue
+
             if cert > certainty:
                 player = p.number
                 certainty = cert
-        return (player, certainty)
+                
+        if player:
+            return (player, certainty)
+        else:
+            return fallback
 
     def _highest_expected_value(self):
         player = None
         value = 0
+        fallback = None
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-            
+                          
             v = p.cards.expected_value()
+
+            if fallback is None:
+                fallback = (p.number, v)
+
+            if p.handmaiden:
+                continue
+
             if v > value:
                 player = p.number
                 value = v
-        return (player, value)
-
+                
+        if player:
+            return (player, value)
+        else:
+            return fallback
                
     def _get_required_play(self):
         if Cards.COUNTESS in self.cards:
@@ -598,13 +649,13 @@ class Dealer:
         winner = 0
         for i in range(len(cards)):
             if cards[i] > 0:
-                print('  Player %i: %s' % (i, Cards.name(cards[i])))
+                print('  %s: %s' % (self.agents[i].name, Cards.name(cards[i])))
                 if cards[i] > cards[winner]:
                     winner = i
 
-        print('Winner: %i' % winner)
+        print('Winner: %s' % self.agents[winner].name)
 
-random.seed(1)
+random.seed(2)
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
 agents = [ConsoleAgent(0, names), LowballAgent(1, names), LowballAgent(2, names), LowballAgent(3, names)]
 dealer = Dealer(agents)
