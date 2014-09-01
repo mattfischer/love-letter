@@ -253,11 +253,12 @@ class ConsoleAgent(Agent):
     def get_play(self):
         card = None
 
+        self.cards = sorted(self.cards)
         play = {}
         while card is None:
             s = '  '.join('%s(%i)' % (Cards.name(card), self.discarded[card]) for card in range(Cards.NUM_CARDS) if self.discarded[card] > 0)
             print('Discarded cards: %s' % s)
-            print('Available cards are [1] %s  [2] %s' % (Cards.name(self.cards[0]), Cards.name(self.cards[1])))
+            print('Available cards are [%i] %s  [%i] %s' % (self.cards[0], Cards.name(self.cards[0]), self.cards[1], Cards.name(self.cards[1])))
             print('Enter selection:')
             line = sys.stdin.readline().strip()
             if line.startswith('enable'):
@@ -268,10 +269,11 @@ class ConsoleAgent(Agent):
                 continue
 
             c = int(line)
-            if c in (1, 2):
-                card = self.cards[c - 1]
-            else:
+            if c not in self.cards:
                 print('Invalid selection')
+                continue
+
+            card = c
             play['card'] = card
 
         if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
