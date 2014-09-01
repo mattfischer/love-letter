@@ -37,7 +37,7 @@ class Cards:
     @staticmethod
     def name(card):
          return Cards.names[card]
-            
+
 class CardSet:
     def __init__(self, other=None):
         if other:
@@ -85,7 +85,7 @@ class CardSet:
         for c in reversed(range(Cards.NUM_CARDS)):
             if c == exclude:
                 continue
-            
+
             cert = self.certainty(c)
             if cert > certainty:
                 card = c
@@ -111,7 +111,7 @@ class CardSet:
             return count / total
         else:
             return 0
-   
+
     @staticmethod
     def full():
         card_set = CardSet()
@@ -124,7 +124,7 @@ class CardSet:
         card_set = CardSet()
         card_set[card] = Cards.start_count(card)
         return card_set
-    
+
 class Player:
     def __init__(self, number, name):
         self.number = number
@@ -133,10 +133,10 @@ class Player:
         self.next_card = None
         self.out = False
         self.handmaiden = False
-        
+
     def __str__(self):
         return self.name
-    
+
 class Observer:
     def __init__(self, names):
         self.deck_set = CardSet.full()
@@ -156,14 +156,14 @@ class Observer:
         player = self.players[player]
         self._discard(card, player)
         player.cards.clear(card)
-        
+
     def report_draw(self, player, card=None):
         player = self.players[player]
         player.next_card = CardSet(self.deck_set)
         if card:
             player.next_card.clear(exclude=card)
             self._discard(card)
-            
+
     def report_play(self, *k, **kw):
         player = self.players[kw['player']]
         card = kw['card']
@@ -171,17 +171,17 @@ class Observer:
         if target is not None:
             target = self.players[target]
         discard = kw.get('discard', None)
-            
+
         if player.next_card is None:
             player.next_card = CardSet(self.deck_set)
 
         player.handmaiden = False
-        
+
         if player.cards.contains(card):
             player.cards = player.next_card
 
         self._discard(card)
-        
+
         if card == Cards.GUARD:
             challenge = kw['challenge']
             if discard:
@@ -215,7 +215,7 @@ class Observer:
             else:
                 target.cards = CardSet(self.deck_set)
                 if 'new_card' in kw:
-                    target.cards.clear(kw['new_card'])            
+                    target.cards.clear(kw['new_card'])
         elif card == Cards.KING:
             player.cards, target.cards = target.cards, player.cards
         elif card == Cards.COUNTESS:
@@ -256,7 +256,7 @@ class Agent:
         new_card = kw.get('new_card', None)
         other_card = kw.get('other_card', None)
         loser = kw.get('loser', None)
-        
+
         if self.player == player:
             self.cards.remove(card)
 
@@ -268,7 +268,7 @@ class Agent:
         elif card == Cards.KING and self.player in (player, target):
             del self.cards[0]
             self.cards.append(other_card)
-        
+
 class LowballAgent(Agent):
     def __init__(self, player, names):
         super(LowballAgent, self).__init__(player, names)
@@ -281,11 +281,11 @@ class LowballAgent(Agent):
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-         
+
             (c, cert) = p.cards.most_likely(exclude_card)
             if fallback is None:
                 fallback = (p.number, c, cert)
-        
+
             if p.handmaiden:
                 continue
 
@@ -293,7 +293,7 @@ class LowballAgent(Agent):
                 player = p.number
                 card = c
                 certainty = cert
-                
+
         if player:
             return (player, card, certainty)
         else:
@@ -307,7 +307,7 @@ class LowballAgent(Agent):
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-           
+
             (c, cert) = p.cards.most_likely(exclude_card)
 
             if fallback is None:
@@ -320,7 +320,7 @@ class LowballAgent(Agent):
                 player = p.number
                 card = c
                 certainty = cert
-                
+
         if player:
             return (player, card, certainty)
         else:
@@ -333,7 +333,7 @@ class LowballAgent(Agent):
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-                        
+
             cert = p.cards.chance_less_than(card)
 
             if fallback is None:
@@ -345,7 +345,7 @@ class LowballAgent(Agent):
             if cert > certainty:
                 player = p.number
                 certainty = cert
-                
+
         if player:
             return (player, certainty)
         else:
@@ -358,7 +358,7 @@ class LowballAgent(Agent):
         for p in self.observer.players:
             if p.out or p.number == self.player:
                 continue
-                          
+
             v = p.cards.expected_value()
 
             if fallback is None:
@@ -370,18 +370,18 @@ class LowballAgent(Agent):
             if v > value:
                 player = p.number
                 value = v
-                
+
         if player:
             return (player, value)
         else:
             return fallback
-               
+
     def _get_required_play(self):
         if Cards.COUNTESS in self.cards:
             if Cards.PRINCE in self.cards or Cards.KING in self.cards:
                 return {'card': Cards.COUNTESS}
         return None
- 
+
     def get_play(self):
         Log.print('ai: %s play options: %s %s' % (self.name, Cards.name(self.cards[0]), Cards.name(self.cards[1])))
         self.observer.print_state('ai')
@@ -414,21 +414,21 @@ class LowballAgent(Agent):
 class ConsoleAgent(Agent):
     def __init__(self, player, names):
         super(ConsoleAgent, self).__init__(player, names)
-        
+
     def start_round(self, card):
         super(ConsoleAgent, self).start_round(card)
         print('%s starts with card %s' % (self.name, Cards.name(card)))
         self.discarded = []
         for card in range(Cards.NUM_CARDS):
             self.discarded.append(0)
-        
+
     def report_draw(self, card):
         super(ConsoleAgent, self).report_draw(card)
         print('%s draws card %s' % (self.name, Cards.name(card)))
-            
+
     def report_play(self, *k, **kw):
         super(ConsoleAgent, self).report_play(*k, **kw)
-        
+
         player = kw['player']
         card = kw['card']
         self.discarded[card] += 1
@@ -441,7 +441,7 @@ class ConsoleAgent(Agent):
 
         if discard:
             self.discarded[discard] += 1
-            
+
         if card == Cards.GUARD:
             challenge = kw['challenge']
             print('%s is accused of having card %s' % (self.names[target], Cards.name(challenge)))
@@ -476,7 +476,7 @@ class ConsoleAgent(Agent):
         elif card == Cards.PRINCESS:
             print('%s is out' % self.names[player])
         print()
-        
+
     def get_play(self):
         card = None
 
@@ -493,14 +493,14 @@ class ConsoleAgent(Agent):
             elif line.startswith('disable'):
                 Log.disable(line.split(' ')[1])
                 continue
-            
-            c = int(line)            
+
+            c = int(line)
             if c in (1, 2):
                 card = self.cards[c - 1]
             else:
                 print('Invalid selection')
             play['card'] = card
-    
+
         if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
             s = '  '.join(['[%i] %s' % (player.number + 1, player.name) for player in self.observer.players if not player.out and player.number != self.player])
             print('Players: %s' % s)
@@ -517,7 +517,7 @@ class ConsoleAgent(Agent):
             play['challenge'] = c
 
         return play
-    
+
 class Deck:
     def __init__(self):
         self.reset()
@@ -550,12 +550,12 @@ class Dealer:
         report['player'] = player
         self.agent_info[player].cards.remove(card)
         player_info = self.agent_info[player]
-        
+
         target = play.get('target', None)
         if target is not None:
             report['target'] = target
             target_info = self.agent_info[target]
-            
+
         if card == Cards.GUARD:
             challenge = play['challenge']
             report['challenge'] = challenge
@@ -630,7 +630,7 @@ class Dealer:
                 Log.print('dealer: Dealing %s to %s' % (Cards.name(card), agent.name))
                 self.agent_info[current].cards.append(card)
                 self.agents[current].report_draw(card)
-                
+
                 play = self.agents[current].get_play()
                 self._process_play(play, current)
 
@@ -641,7 +641,7 @@ class Dealer:
 
             if players_in == 1:
                 break
-            
+
             current += 1
             if current >= len(self.agents):
                 current = 0
@@ -665,7 +665,7 @@ class Dealer:
 
 class Log:
     enabled_zones = set()
-    
+
     @staticmethod
     def print(s):
         if ':' in s:
@@ -681,7 +681,7 @@ class Log:
 
     def disable(zone):
         Log.enabled_zones.remove(zone)
-        
+
 random.seed(2)
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
 agents = [ConsoleAgent(0, names), LowballAgent(1, names), LowballAgent(2, names), LowballAgent(3, names)]
