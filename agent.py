@@ -275,7 +275,17 @@ class ConsoleAgent(Agent):
             play['card'] = card
 
         if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
-            s = '  '.join(['[%i] %s' % (player.number + 1, player.name) for player in self.observer.players if not player.out and player.number != self.player])
+            players = []
+            for player in self.observer.players:
+                if player.out:
+                    continue
+
+                if player.number == self.player and card != Cards.PRINCE:
+                    continue
+
+                players.append(player)
+
+            s = '  '.join(['[%i] %s' % (player.number + 1, player.name) for player in players])
             print('Players: %s' % s)
             print('Enter target player:')
             s = int(sys.stdin.readline())
