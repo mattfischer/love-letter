@@ -256,6 +256,8 @@ class ConsoleAgent(Agent):
         self.cards = sorted(self.cards)
         play = {}
         while card is None:
+            s = '  '.join([player.name for player in self.observer.players if not player.out])
+            print('Players still in round: %s' % s)
             s = '  '.join('%s(%i)' % (Cards.name(card), self.discarded[card]) for card in range(Cards.NUM_CARDS) if self.discarded[card] > 0)
             print('Discarded cards: %s' % s)
             print('Available cards are [%i] %s  [%i] %s' % (self.cards[0], Cards.name(self.cards[0]), self.cards[1], Cards.name(self.cards[1])))
