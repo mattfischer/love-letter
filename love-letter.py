@@ -226,10 +226,10 @@ class Observer:
 
         player.next_card = None
 
-    def print_state(self):
-        print('Deck set: %s' % self.deck_set)
+    def print_state(self, zone):
+        Log.print('%s: Deck set: %s' % (zone, self.deck_set))
         for p in self.players:
-            print('%s set: %s' % (p, p.cards))
+            Log.print('%s: %s set: %s' % (zone, p, p.cards))
 
 class Agent:
     def __init__(self, player, names):
@@ -383,7 +383,8 @@ class LowballAgent(Agent):
         return None
  
     def get_play(self):
-        #print('%s play options: %s %s' % (self.name, Cards.name(self.cards[0]), Cards.name(self.cards[1])))
+        Log.print('ai: %s play options: %s %s' % (self.name, Cards.name(self.cards[0]), Cards.name(self.cards[1])))
+        self.observer.print_state('ai')
         ret = self._get_required_play()
         if not ret:
             for card in range(Cards.NUM_CARDS):
@@ -394,23 +395,19 @@ class LowballAgent(Agent):
                         (player, card, certainty) = self._most_likely(exclude_card=Cards.GUARD)
                         ret['target'] = player
                         ret['challenge'] = card
-                        #print('%s has %i%% chance of card %s' % (self.names[player], certainty * 100, Cards.name(card)))
-                        #print('  ' + str(self.observer.players[player].cards))
+                        Log.print('ai: %s has %i%% chance of card %s' % (self.names[player], certainty * 100, Cards.name(card)))
                     elif card == Cards.PRIEST:
                         (player, card, certainty) = self._least_likely()
                         ret['target'] = player
-                        #print('%s has %i%% chance of card %s' % (self.names[player], certainty * 100, Cards.name(card)))
-                        #print('  ' + str(self.observer.players[player].cards))
+                        Log.print('ai: %s has %i%% chance of card %s' % (self.names[player], certainty * 100, Cards.name(card)))
                     elif card == Cards.BARON:
                         (player, certainty) = self._most_likely_less_than(other)
                         ret['target'] = player
-                        #print('%s has %i%% chance of being less than card %s' % (self.names[player], certainty * 100, Cards.name(other)))
-                        #print('  ' + str(self.observer.players[player].cards))
+                        Log.print('ai: %s has %i%% chance of being less than card %s' % (self.names[player], certainty * 100, Cards.name(other)))
                     elif card in (Cards.PRINCE, Cards.KING):
                         (player, value) = self._highest_expected_value()
                         ret['target'] = player
-                        #print('%s has highest expected value: %f' % (self.names[player], value))
-                        #print('  ' + str(self.observer.players[player].cards))
+                        Log.print('ai: %s has highest expected value: %f' % (self.names[player], value))
                     break
         return ret
 
@@ -489,7 +486,15 @@ class ConsoleAgent(Agent):
             print('Discarded cards: %s' % s)
             print('Available cards are [1] %s  [2] %s' % (Cards.name(self.cards[0]), Cards.name(self.cards[1])))
             print('Enter selection:')
-            c = int(sys.stdin.readline())
+            line = sys.stdin.readline().strip()
+            if line.startswith('enable'):
+                Log.enable(line.split(' ')[1])
+                continue
+            elif line.startswith('disable'):
+                Log.disable(line.split(' ')[1])
+                continue
+            
+            c = int(line)            
             if c in (1, 2):
                 card = self.cards[c - 1]
             else:
@@ -584,6 +589,7 @@ class Dealer:
                 target_info.out = True
             else:
                 new_card = self.deck.draw()
+                Log.print('dealer: Dealing %s to %s' % (Cards.name(card), self.agents[target].name))
                 report_target['new_card'] = new_card
                 target_info.cards.append(new_card)
         elif card == Cards.KING:
@@ -608,6 +614,7 @@ class Dealer:
         self.agent_info = []
         for agent in self.agents:
             card = self.deck.draw()
+            Log.print('dealer: Dealing %s to %s' % (Cards.name(card), agent.name))
             class AgentInfo:
                 pass
             info = AgentInfo()
@@ -620,6 +627,7 @@ class Dealer:
         while self.deck.remaining() > 1:
             if not self.agent_info[current].out:
                 card = self.deck.draw()
+                Log.print('dealer: Dealing %s to %s' % (Cards.name(card), agent.name))
                 self.agent_info[current].cards.append(card)
                 self.agents[current].report_draw(card)
                 
@@ -655,6 +663,25 @@ class Dealer:
 
         print('Winner: %s' % self.agents[winner].name)
 
+class Log:
+    enabled_zones = set()
+    
+    @staticmethod
+    def print(s):
+        if ':' in s:
+            zone = s.split(':')[0]
+        else:
+            zone = None
+
+        if zone is None or zone in Log.enabled_zones:
+            print('* %s' % s)
+
+    def enable(zone):
+        Log.enabled_zones.add(zone)
+
+    def disable(zone):
+        Log.enabled_zones.remove(zone)
+        
 random.seed(2)
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
 agents = [ConsoleAgent(0, names), LowballAgent(1, names), LowballAgent(2, names), LowballAgent(3, names)]
