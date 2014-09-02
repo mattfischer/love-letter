@@ -23,6 +23,9 @@ class Agent:
     def end_round(self, cards, winner):
         self.observer.end_round(cards, winner)
 
+    def end_game(self, winner):
+        pass
+
     def report_play(self, *k, **kw):
         self.observer.report_play(*k, **kw)
         player = kw['player']
@@ -266,13 +269,18 @@ class ConsoleAgent(Agent):
         else:
             print('Winner: %s' % self.observer.players[winner].name)
 
+    def end_game(self, winner):
+        super(ConsoleAgent, self).end_game(winner)
+        print('Game is over')
+        print('Winner: %s' % self.observer.players[winner].name)
+
     def get_play(self):
         card = None
 
         self.cards = sorted(self.cards)
         play = {}
         while card is None:
-            s = '  '.join([player.name for player in self.observer.players if not player.out])
+            s = '  '.join(['%s(%i)' % (player.name, player.score) for player in self.observer.players if not player.out])
             print('Players still in round: %s' % s)
             s = '  '.join('%s(%i)' % (Cards.name(card), self.discarded[card]) for card in range(Cards.NUM_CARDS) if self.discarded[card] > 0)
             print('Discarded cards: %s' % s)

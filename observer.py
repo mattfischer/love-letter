@@ -30,6 +30,7 @@ class Observer:
     def start_round(self, player, card):
         for p in self.players:
             p.cards = CardSet.full()
+            p.out = False
         player = self.players[player]
         self._discard(card, player)
         player.cards.clear(card)
