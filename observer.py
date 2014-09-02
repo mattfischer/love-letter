@@ -9,6 +9,7 @@ class Player:
         self.next_card = None
         self.out = False
         self.handmaiden = False
+        self.score = 0
 
     def __str__(self):
         return self.name
@@ -102,7 +103,12 @@ class Observer:
 
         player.next_card = None
 
+    def end_round(self, cards, winner):
+        if winner is not None:
+            self.players[winner].score += 1
+
     def print_state(self, zone):
+        Log.print('%s: Player scores: %s' % (zone, '  '.join(['%s: %i' % (player.name, player.score) for player in self.players])))
         Log.print('%s: Deck set: %s' % (zone, self.deck_set))
         for p in self.players:
             Log.print('%s: %s set: %s' % (zone, p, p.cards))

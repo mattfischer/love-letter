@@ -20,6 +20,9 @@ class Agent:
         self.observer.report_draw(self.player, card)
         self.cards.append(card)
 
+    def end_round(self, cards, winner):
+        self.observer.end_round(cards, winner)
+
     def report_play(self, *k, **kw):
         self.observer.report_play(*k, **kw)
         player = kw['player']
@@ -249,6 +252,19 @@ class ConsoleAgent(Agent):
         elif card == Cards.PRINCESS:
             print('%s is out' % self.names[player])
         print()
+
+    def end_round(self, cards, winner):
+        super(ConsoleAgent, self).end_round(cards, winner)
+        print('Round is over')
+        print('Final cards:')
+        for i in range(len(cards)):
+            if cards[i] is not None:
+                print('  %s: %s' % (self.observer.players[i].name, Cards.name(cards[i])))
+
+        if winner is None:
+            print('Tie: No winner')
+        else:
+            print('Winner: %s' % self.observer.players[winner].name)
 
     def get_play(self):
         card = None

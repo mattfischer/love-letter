@@ -21,9 +21,10 @@ class Deck:
         return len(self.cards)
 
 class AgentInfo:
-	def __init__(self):
-		self.cards = []
-		self.out = False
+    def __init__(self):
+        self.cards = []
+        self.out = False
+        self.score = 0
 
 class Dealer:
     def __init__(self, agents):
@@ -136,16 +137,16 @@ class Dealer:
         cards = []
         for info in self.agent_info:
             if info.out:
-                cards.append(0)
+                cards.append(None)
             else:
                 cards.append(info.cards[0])
 
-        print('Final standings:')
-        winner = 0
-        for i in range(len(cards)):
-            if cards[i] > 0:
-                print('  %s: %s' % (self.agents[i].name, Cards.name(cards[i])))
-                if cards[i] > cards[winner]:
-                    winner = i
+        lst = [i for i in range(len(cards))]
+        lst = sorted(lst, key=lambda x: cards[x] or 0)
+        winner = None
+        if cards[lst[-1]] != cards[lst[-2]]:
+            winner = lst[-1]
+            self.agent_info[winner].score += 1
 
-        print('Winner: %s' % self.agents[winner].name)
+        for agent in self.agents:
+            agent.end_round(cards, winner)
