@@ -53,107 +53,81 @@ class LowballAgent(Agent):
         super(LowballAgent, self).__init__(player, names)
 
     def _most_likely(self, exclude_card=None):
-        player = None
-        card = None
-        certainty = 0
-        fallback = None
-        for p in self.observer.players:
-            if p.out or p.number == self.player:
-                continue
+        lst = []
+        for player in self.observer.players:
+            if player.number != self.player and not player.out:
+                (card, certainty) = player.cards.most_likely(exclude_card)
+                lst.append((player, card, certainty))
 
-            (c, cert) = p.cards.most_likely(exclude_card)
-            if fallback is None:
-                fallback = (p.number, c, cert)
+        lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
+        lst = sorted(lst, key=lambda x: x[2], reverse=True)
+        lst = sorted(lst, key=lambda x: x[0].handmaiden)
 
-            if p.handmaiden:
-                continue
+        Log.print('ai: Hand probabilities:')
+        for l in lst:
+            Log.print('ai:   %s: %s (%i%% chance) %s' % (l[0].name, Cards.name(l[1]), l[2] * 100, '(HANDMAIDEN)' if l[0].handmaiden else ''))
 
-            if cert > certainty:
-                player = p.number
-                card = c
-                certainty = cert
-
-        if player:
-            return (player, card, certainty)
-        else:
-            return fallback
+        winner = lst[0]
+        Log.print('ai: %s has most certain hand (%i%% chance of card %s)' % (winner[0].name, winner[2] * 100, Cards.name(winner[1])))
+        return winner
 
     def _least_likely(self, exclude_card=None):
-        player = None
-        card = None
-        certainty = 10
-        fallback = None
-        for p in self.observer.players:
-            if p.out or p.number == self.player:
-                continue
+        lst = []
+        for player in self.observer.players:
+            if player.number != self.player and not player.out:
+                (card, certainty) = player.cards.most_likely(exclude_card)
+                lst.append((player, card, certainty))
 
-            (c, cert) = p.cards.most_likely(exclude_card)
+        lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
+        lst = sorted(lst, key=lambda x: x[2])
+        lst = sorted(lst, key=lambda x: x[0].handmaiden)
 
-            if fallback is None:
-                fallback = (p.number, c, cert)
+        Log.print('ai: Hand probabilities:')
+        for l in lst:
+            Log.print('ai:   %s: %s (%i%% chance) %s' % (l[0].name, Cards.name(l[1]), l[2] * 100, '(HANDMAIDEN)' if l[0].handmaiden else ''))
 
-            if p.handmaiden:
-                continue
-
-            if cert < certainty:
-                player = p.number
-                card = c
-                certainty = cert
-
-        if player:
-            return (player, card, certainty)
-        else:
-            return fallback
+        winner = lst[0]
+        Log.print('ai: %s has least certain hand (%i%% chance of card %s)' % (winner[0].name, winner[2] * 100, Cards.name(winner[1])))
+        return winner
 
     def _most_likely_less_than(self, card):
-        player = None
-        certainty = 0
-        fallback = None
-        for p in self.observer.players:
-            if p.out or p.number == self.player:
-                continue
+        lst = []
+        for player in self.observer.players:
+            if player.number != self.player and not player.out:
+                certainty = player.cards.chance_less_than(card)
+                lst.append((player, certainty))
 
-            cert = p.cards.chance_less_than(card)
+        lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
+        lst = sorted(lst, key=lambda x: x[1], reverse=True)
+        lst = sorted(lst, key=lambda x: x[0].handmaiden)
 
-            if fallback is None:
-                fallback = (p.number, cert)
+        Log.print('ai: Probabilities that hand is less than %s:' % Cards.name(card))
+        for l in lst:
+            Log.print('ai:   %s: %i%% %s' % (l[0].name, l[1] * 100, '(HANDMAIDEN)' if l[0].handmaiden else ''))
 
-            if p.handmaiden:
-                continue
-
-            if cert > certainty:
-                player = p.number
-                certainty = cert
-
-        if player:
-            return (player, certainty)
-        else:
-            return fallback
+        winner = lst[0]
+        Log.print('ai: %s has best chance (%i%%)' % (winner[0].name, winner[1] * 100))
+        return winner
 
     def _highest_expected_value(self):
-        player = None
-        value = 0
-        fallback = None
-        for p in self.observer.players:
-            if p.out or p.number == self.player:
-                continue
+        lst = []
+        for player in self.observer.players:
+            if player.number != self.player and not player.out:
+                value = player.cards.expected_value()
+                lst.append((player, value))
 
-            v = p.cards.expected_value()
+        lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
+        lst = sorted(lst, key=lambda x: x[1], reverse=True)
+        lst = sorted(lst, key=lambda x: x[0].handmaiden)
 
-            if fallback is None:
-                fallback = (p.number, v)
+        Log.print('ai: Expected hand values:')
+        for l in lst:
+            Log.print('ai:   %s: %f %s' % (l[0].name, l[1], '(HANDMAIDEN)' if l[0].handmaiden else ''))
 
-            if p.handmaiden:
-                continue
+        winner = lst[0]
+        Log.print('ai: %s has highest expected hand value %f' % (winner[0].name, winner[1]))
+        return winner
 
-            if v > value:
-                player = p.number
-                value = v
-
-        if player:
-            return (player, value)
-        else:
-            return fallback
 
     def _get_required_play(self):
         if Cards.COUNTESS in self.cards:
@@ -172,21 +146,17 @@ class LowballAgent(Agent):
                     ret = {'card': card}
                     if card == Cards.GUARD:
                         (player, card, certainty) = self._most_likely(exclude_card=Cards.GUARD)
-                        ret['target'] = player
+                        ret['target'] = player.number
                         ret['challenge'] = card
-                        Log.print('ai: %s has %i%% chance of card %s' % (self.names[player], certainty * 100, Cards.name(card)))
                     elif card == Cards.PRIEST:
                         (player, card, certainty) = self._least_likely()
-                        ret['target'] = player
-                        Log.print('ai: %s has %i%% chance of card %s' % (self.names[player], certainty * 100, Cards.name(card)))
+                        ret['target'] = player.number
                     elif card == Cards.BARON:
                         (player, certainty) = self._most_likely_less_than(other)
-                        ret['target'] = player
-                        Log.print('ai: %s has %i%% chance of being less than card %s' % (self.names[player], certainty * 100, Cards.name(other)))
+                        ret['target'] = player.number
                     elif card in (Cards.PRINCE, Cards.KING):
                         (player, value) = self._highest_expected_value()
-                        ret['target'] = player
-                        Log.print('ai: %s has highest expected value: %f' % (self.names[player], value))
+                        ret['target'] = player.number
                     break
         return ret
 
@@ -268,6 +238,7 @@ class ConsoleAgent(Agent):
             print('Tie: No winner')
         else:
             print('Winner: %s' % self.observer.players[winner].name)
+        print()
 
     def end_game(self, winner):
         super(ConsoleAgent, self).end_game(winner)
@@ -288,7 +259,7 @@ class ConsoleAgent(Agent):
             print('Enter selection:')
             line = sys.stdin.readline().strip()
             if line.startswith('enable'):
-                Log.enable(line.split(' ')[1])
+                Log.enable(line.split(' ')[1])   
                 continue
             elif line.startswith('disable'):
                 Log.disable(line.split(' ')[1])
