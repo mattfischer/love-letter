@@ -71,43 +71,33 @@ class CardSet:
             self.cards[card] -= 1
 
     def certainty(self, card):
-        total = sum(self.cards)
-        if total:
-            return self.cards[card] / total
-        else:
+        try:
+            return self.cards[card] / sum(self.cards)
+        except ZeroDivisionError:
             return 0
 
     def most_likely(self, exclude):
-        card = None
-        certainty = 0
-        for c in reversed(range(Cards.NUM_CARDS)):
-            if c == exclude:
-                continue
+        cards = range(Cards.NUM_CARDS)
+        cards = sorted(cards, reverse=True)
+        cards = sorted(cards, key=lambda x: self.cards[x], reverse=True)
+        card = cards[0]
+        if card == exclude:
+            card = cards[1]
 
-            cert = self.certainty(c)
-            if cert > certainty:
-                card = c
-                certainty = cert
-        return (card, certainty)
+        return (card, self.certainty(card))
 
     def chance_less_than(self, card):
-        total = sum(self.cards)
-        if total:
-            count = 0
-            for c in range(Cards.GUARD, card):
-                count += self.cards[c]
-            return count / total
-        else:
+        try:
+            count = sum(self.cards[c] for c in range(card))
+            return count / sum(self.cards)
+        except ZeroDivisionError:
             return 0
 
     def expected_value(self):
-        total = sum(self.cards)
-        if total:
-            count = 0
-            for c in range(Cards.NUM_CARDS):
-                count += c * self.cards[c]
-            return count / total
-        else:
+        try:
+            count = sum(c * self.cards[c] for c in range(Cards.NUM_CARDS))
+            return count / sum(self.cards)
+        except ZeroDivisionError:
             return 0
 
     @staticmethod
