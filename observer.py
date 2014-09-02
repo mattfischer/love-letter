@@ -5,18 +5,19 @@ class Player:
     def __init__(self, number, name):
         self.number = number
         self.name = name
+        self.score = 0
+
+    def reset(self):
         self.cards = CardSet.full()
         self.next_card = None
         self.out = False
         self.handmaiden = False
-        self.score = 0
 
     def __str__(self):
         return self.name
 
 class Observer:
     def __init__(self, names):
-        self.deck_set = CardSet.full()
         self.players = []
         for i in range(len(names)):
             self.players.append(Player(i, names[i]))
@@ -28,9 +29,9 @@ class Observer:
                 player.cards.remove(card)
 
     def start_round(self, player, card):
+        self.deck_set = CardSet.full()
         for p in self.players:
-            p.cards = CardSet.full()
-            p.out = False
+            p.reset()
         player = self.players[player]
         self._discard(card, player)
         player.cards.clear(card)
