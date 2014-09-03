@@ -277,13 +277,17 @@ class ConsoleAgent(Agent):
 
         self.cards = sorted(self.cards)
         play = {}
+
+        s = '  '.join(['%s(%i)' % (player.name, player.score) for player in self.observer.players if not player.out])
+        print('Players still in round: %s' % s)
+        s = '  '.join('%s(%i)' % (Cards.name(card), self.discarded[card]) for card in range(Cards.NUM_CARDS) if self.discarded[card] > 0)
+        print('Discarded cards: %s' % s)
+
         while card is None:
-            s = '  '.join(['%s(%i)' % (player.name, player.score) for player in self.observer.players if not player.out])
-            print('Players still in round: %s' % s)
-            s = '  '.join('%s(%i)' % (Cards.name(card), self.discarded[card]) for card in range(Cards.NUM_CARDS) if self.discarded[card] > 0)
-            print('Discarded cards: %s' % s)
             print('Available cards are [%i] %s  [%i] %s' % (self.cards[0], Cards.name(self.cards[0]), self.cards[1], Cards.name(self.cards[1])))
-            print('Enter selection:')
+            print('Enter selection: ', end='')
+            sys.stdout.flush()
+
             line = sys.stdin.readline().strip()
             if line.startswith('enable'):
                 Log.enable(line.split(' ')[1])
@@ -292,13 +296,21 @@ class ConsoleAgent(Agent):
                 Log.disable(line.split(' ')[1])
                 continue
 
-            c = int(line)
-            if c not in self.cards:
-                print('Invalid selection')
-                continue
+            try:
+                c = int(line)
+                if c in self.cards:
+                   card = c
+            except ValueError:
+                pass
 
-            card = c
-            play['card'] = card
+            if card is None:
+                print('  Invalid selection')
+            elif card in (Cards.PRINCE, Cards.KING) and Cards.COUNTESS in self.cards:
+                print('  Must discard COUNTESS')
+                card = None
+
+        print()
+        play['card'] = card
 
         if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
             players = []
@@ -311,18 +323,47 @@ class ConsoleAgent(Agent):
 
                 players.append(player)
 
-            s = '  '.join(['[%i] %s' % (player.number + 1, player.name) for player in players])
-            print('Players: %s' % s)
-            print('Enter target player:')
-            s = int(sys.stdin.readline())
-            if s < len(self.observer.players) + 1:
-                play['target'] = s - 1
+            target = None
+            while target is None:
+                s = '  '.join(['[%i] %s' % (player.number + 1, player.name) for player in players])
+                print('Players: %s' % s)
+                print('Enter target player: ', end='')
+                sys.stdout.flush()
+
+                try:
+                    t = int(sys.stdin.readline()) - 1
+                    if t in range(len(self.observer.players)) and self.observer.players[t] in players:
+                        target = t
+                except IndexError:
+                    pass
+                except ValueError:
+                    pass
+
+                if target is None:
+                    print('  Invalid selection')
+
+            print()
+            play['target'] = target
 
         if card == Cards.GUARD:
-            s = '  '.join(['[%i] %s' % (card, Cards.name(card)) for card in range(Cards.GUARD, Cards.NUM_CARDS)])
-            print('Cards: %s' % s)
-            print('Enter challenge card:')
-            c = int(sys.stdin.readline())
-            play['challenge'] = c
+            challenge = None
+            while challenge is None:
+                s = '  '.join(['[%i] %s' % (card, Cards.name(card)) for card in range(Cards.GUARD, Cards.NUM_CARDS)])
+                print('Cards: %s' % s)
+                print('Enter challenge card: ', end='')
+                sys.stdout.flush()
+
+                try:
+                    c = int(sys.stdin.readline())
+                    if c in range(Cards.GUARD, Cards.NUM_CARDS):
+                        challenge = c
+                except ValueError:
+                    pass
+
+                if challenge is None:
+                    print('  Invalid selection')
+
+            print()
+            play['challenge'] = challenge
 
         return play
