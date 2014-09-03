@@ -12,6 +12,9 @@ class Agent:
         self.observer = Observer(names)
         self.cards = []
 
+    def start_game(self):
+        self.observer.start_game()
+
     def start_round(self, card):
         self.observer.start_round(self.player, card)
         self.cards = [card]

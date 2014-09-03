@@ -5,9 +5,12 @@ class Player:
     def __init__(self, number, name):
         self.number = number
         self.name = name
+        self.start_game()
+
+    def start_game(self):
         self.score = 0
 
-    def reset(self):
+    def start_round(self):
         self.cards = CardSet.full()
         self.next_card = None
         self.out = False
@@ -28,10 +31,14 @@ class Observer:
             if player != exclude_player:
                 player.cards.remove(card)
 
+    def start_game(self):
+        for p in self.players:
+            p.start_game()
+
     def start_round(self, player, card):
         self.deck_set = CardSet.full()
         for p in self.players:
-            p.reset()
+            p.start_round()
         player = self.players[player]
         self._discard(card, player)
         player.cards.clear(card)

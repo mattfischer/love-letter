@@ -195,6 +195,9 @@ class Dealer:
         start_player = 0
         winner = None
 
+        for agent in self.agents:
+            agent.start_game()
+
         while True:
             winner = self.do_round(start_player)
             if winner:
