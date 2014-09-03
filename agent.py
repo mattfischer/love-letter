@@ -1,4 +1,4 @@
-import sys
+import sys, random
 
 from observer import Observer
 from card import Cards, CardSet
@@ -91,7 +91,7 @@ class LowballAgent(Agent):
                 (card, certainty) = player.cards.most_likely(exclude_card)
                 lst.append((player, card, certainty))
 
-
+        random.shuffle(lst)
         lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
         lst = sorted(lst, key=lambda x: x[2], reverse=True)
         lst = sorted(lst, key=lambda x: x[0].handmaiden)
@@ -111,6 +111,7 @@ class LowballAgent(Agent):
                 (card, certainty) = player.cards.most_likely(exclude_card)
                 lst.append((player, card, certainty))
 
+        random.shuffle(lst)
         lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
         lst = sorted(lst, key=lambda x: x[2])
         lst = sorted(lst, key=lambda x: x[0].handmaiden)
@@ -130,6 +131,7 @@ class LowballAgent(Agent):
                 certainty = player.cards.chance_less_than(card)
                 lst.append((player, certainty))
 
+        random.shuffle(lst)
         lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
         lst = sorted(lst, key=lambda x: x[1], reverse=True)
         lst = sorted(lst, key=lambda x: x[0].handmaiden)
@@ -149,6 +151,7 @@ class LowballAgent(Agent):
                 value = player.cards.expected_value()
                 lst.append((player, value))
 
+        random.shuffle(lst)
         lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
         lst = sorted(lst, key=lambda x: x[1], reverse=True)
         lst = sorted(lst, key=lambda x: x[0].handmaiden)

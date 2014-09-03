@@ -16,7 +16,6 @@ class Bullpen:
 
         return self.wins
 
-random.seed(1)
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
 agents = [agent.LowballAgent(0, names), agent.LowballAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
 bullpen = Bullpen(agents)
