@@ -52,6 +52,33 @@ class LowballAgent(Agent):
     def __init__(self, player, names):
         super(LowballAgent, self).__init__(player, names)
 
+    def start_round(self, card):
+        super(LowballAgent, self).start_round(card)
+        Log.print('ai: %s starts with card %s' % (self.name, Cards.name(card)))
+
+    def report_draw(self, card):
+        super(LowballAgent, self).report_draw(card)
+        Log.print('ai: %s draws card %s' % (self.name, Cards.name(card)))
+
+    def report_play(self, *k, **kw):
+        super(LowballAgent, self).report_play(*k, **kw)
+        card = kw['card']
+        player = kw['player']
+        target = kw.get('target', None)
+
+        if player == self.player:
+            if card == Cards.PRIEST:
+                Log.print('ai: %s has card %s' % (self.names[target], Cards.name(kw['other_card'])))
+            elif card == Cards.KING:
+                Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
+        elif target == self.player:
+            if card == Cards.BARON and kw.get('loser', None) == self.player:
+                Log.print('ai: Winning card was %s' % Cards.name(kw['other_card']))
+            elif card == Cards.PRINCE:
+                Log.print('ai: %s draws card %s' % (self.name, Cards.name(kw['new_card'])))
+            elif card == Cards.KING:
+                Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
+
     def _most_likely(self, exclude_card=None):
         lst = []
         for player in self.observer.players:
@@ -259,7 +286,7 @@ class ConsoleAgent(Agent):
             print('Enter selection:')
             line = sys.stdin.readline().strip()
             if line.startswith('enable'):
-                Log.enable(line.split(' ')[1])   
+                Log.enable(line.split(' ')[1])
                 continue
             elif line.startswith('disable'):
                 Log.disable(line.split(' ')[1])
