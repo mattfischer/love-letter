@@ -34,6 +34,32 @@ class Dealer:
         for agent in self.agents:
             self.agent_info.append(AgentInfo())
 
+    def _validate_play(self, play, player):
+        if 'card' not in play:
+            return False
+        card = play['card']
+
+        if card not in self.agent_info[player].cards:
+            return False
+
+        if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
+            if 'target' not in play:
+                return False
+            target = play['target']
+            if target not in range(len(self.agents)) or self.agent_info[target].out:
+                return False
+
+            if card != Cards.PRINCE and target == player:
+                return False
+
+            if card == Cards.GUARD:
+                if 'challenge' not in play:
+                    return False
+                if play['challenge'] not in range(Cards.GUARD, Cards.NUM_CARDS):
+                    return False
+
+        return True
+
     def _process_play(self, play, player):
         report = {}
         report_player = {}
@@ -121,6 +147,10 @@ class Dealer:
                 self.agents[current].report_draw(card)
 
                 play = self.agents[current].get_play()
+                if not self._validate_play(play, current):
+                    Log.print('dealer: Invalid play %s' % play)
+                    continue
+
                 self._process_play(play, current)
 
             players_in = 0
