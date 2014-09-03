@@ -25,6 +25,7 @@ class AgentInfo:
         self.cards = []
         self.out = False
         self.score = 0
+        self.handmaiden = False
 
 class Dealer:
     def __init__(self, agents):
@@ -67,6 +68,7 @@ class Dealer:
         card = play['card']
         report['card'] = card
         report['player'] = player
+        self.agent_info[player].handmaiden = False
         self.agent_info[player].cards.remove(card)
         player_info = self.agent_info[player]
 
@@ -75,46 +77,50 @@ class Dealer:
             report['target'] = target
             target_info = self.agent_info[target]
 
-        if card == Cards.GUARD:
-            challenge = play['challenge']
-            report['challenge'] = challenge
+            if not target_info.handmaiden:
+                if card == Cards.GUARD:
+                    challenge = play['challenge']
+                    report['challenge'] = challenge
 
-            if challenge in target_info.cards:
-                report['discard'] = challenge
-                target_info.cards.remove(challenge)
-                target_info.out = True
-        elif card == Cards.PRIEST:
-            report_player['other_card'] = target_info.cards[0]
-        elif card == Cards.BARON:
-            player_card = player_info.cards[0]
-            target_card = target_info.cards[0]
-            if target_card > player_card:
-                report['loser'] = player
-                report['discard'] = player_card
-                report_player['other_card'] = target_card
-                player_info.cards.remove(player_card)
-                player_info.out = True
-            elif target_card < player_card:
-                report['loser'] = target
-                report['discard'] = target_card
-                report_target['other_card'] = player_card
-                target_info.cards.remove(target_card)
-                target_info.out = True
-        elif card == Cards.PRINCE:
-            discard = target_info.cards[0]
-            report['discard'] = discard
-            target_info.cards.remove(discard)
-            if discard == Cards.PRINCESS:
-                target_info.out = True
-            else:
-                new_card = self.deck.draw()
-                Log.print('dealer: Dealing %s to %s' % (Cards.name(card), self.agents[target].name))
-                report_target['new_card'] = new_card
-                target_info.cards.append(new_card)
-        elif card == Cards.KING:
-            report_player['other_card'] = target_info.cards[0]
-            report_target['other_card'] = player_info.cards[0]
-            target_info.cards, player_info.cards = player_info.cards, target_info.cards
+                    if challenge in target_info.cards:
+                        report['discard'] = challenge
+                        target_info.cards.remove(challenge)
+                        target_info.out = True
+                elif card == Cards.PRIEST:
+                    report_player['other_card'] = target_info.cards[0]
+                elif card == Cards.BARON:
+                    player_card = player_info.cards[0]
+                    target_card = target_info.cards[0]
+                    if target_card > player_card:
+                        report['loser'] = player
+                        report['discard'] = player_card
+                        report_player['other_card'] = target_card
+                        player_info.cards.remove(player_card)
+                        player_info.out = True
+                    elif target_card < player_card:
+                        report['loser'] = target
+                        report['discard'] = target_card
+                        report_target['other_card'] = player_card
+                        target_info.cards.remove(target_card)
+                        target_info.out = True
+                elif card == Cards.PRINCE:
+                    discard = target_info.cards[0]
+                    report['discard'] = discard
+                    target_info.cards.remove(discard)
+                    if discard == Cards.PRINCESS:
+                        target_info.out = True
+                    else:
+                        new_card = self.deck.draw()
+                        Log.print('dealer: Dealing %s to %s' % (Cards.name(card), self.agents[target].name))
+                        report_target['new_card'] = new_card
+                        target_info.cards.append(new_card)
+                elif card == Cards.KING:
+                    report_player['other_card'] = target_info.cards[0]
+                    report_target['other_card'] = player_info.cards[0]
+                    target_info.cards, player_info.cards = player_info.cards, target_info.cards
+
+        if card == Cards.HANDMAIDEN:
+            player_info.handmaiden = True
         elif card == Cards.PRINCESS:
             player_info.out = True
 
@@ -135,6 +141,7 @@ class Dealer:
             Log.print('dealer: Dealing %s to %s' % (Cards.name(card), self.agents[i].name))
             self.agent_info[i].cards = [card]
             self.agent_info[i].out = False
+            self.agent_info[i].handmaiden = False
             self.agents[i].start_round(card)
 
         current = start_player

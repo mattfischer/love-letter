@@ -61,42 +61,44 @@ class Observer:
 
         self._discard(card)
 
-        if card == Cards.GUARD:
-            challenge = kw['challenge']
-            if discard:
-                self._discard(discard)
-                target.cards.clear()
-                target.out = True
-            else:
-                target.cards[challenge] = 0
-        elif card == Cards.PRIEST:
-            if 'other_card' in kw:
-                target.cards.clear(kw['other_card'])
-        elif card == Cards.BARON:
-            loser = kw.get('loser', None)
-            if loser is not None:
-                loser = self.players[loser]
-                winner = player if target == loser else target
-                self._discard(discard)
-                loser.cards.clear()
-                loser.out = True
-                other_card = kw.get('other_card', None)
-                if other_card:
-                    winner.cards.clear(exclude=other_card)
+        if target and not target.handmaiden:
+            if card == Cards.GUARD:
+                challenge = kw['challenge']
+                if discard:
+                    self._discard(discard)
+                    target.cards.clear()
+                    target.out = True
                 else:
-                    winner.cards.clear(cards=range(Cards.GUARD, discard + 1))
-        elif card == Cards.HANDMAIDEN:
+                    target.cards[challenge] = 0
+            elif card == Cards.PRIEST:
+                if 'other_card' in kw:
+                    target.cards.clear(kw['other_card'])
+            elif card == Cards.BARON:
+                loser = kw.get('loser', None)
+                if loser is not None:
+                    loser = self.players[loser]
+                    winner = player if target == loser else target
+                    self._discard(discard)
+                    loser.cards.clear()
+                    loser.out = True
+                    other_card = kw.get('other_card', None)
+                    if other_card:
+                        winner.cards.clear(exclude=other_card)
+                    else:
+                        winner.cards.clear(cards=range(Cards.GUARD, discard + 1))
+            elif card == Cards.PRINCE:
+                self._discard(discard)
+                if discard == Cards.PRINCESS:
+                    target.out = True
+                else:
+                    target.cards = CardSet(self.deck_set)
+                    if 'new_card' in kw:
+                        target.cards.clear(kw['new_card'])
+            elif card == Cards.KING:
+                player.cards, target.cards = target.cards, player.cards
+
+        if card == Cards.HANDMAIDEN:
             player.handmaiden = True
-        elif card == Cards.PRINCE:
-            self._discard(discard)
-            if discard == Cards.PRINCESS:
-                target.out = True
-            else:
-                target.cards = CardSet(self.deck_set)
-                if 'new_card' in kw:
-                    target.cards.clear(kw['new_card'])
-        elif card == Cards.KING:
-            player.cards, target.cards = target.cards, player.cards
         elif card == Cards.COUNTESS:
             player.cards.clear(cards=range(Cards.GUARD, Cards.PRINCE))
         elif card == Cards.PRINCESS:

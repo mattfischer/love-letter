@@ -39,14 +39,15 @@ class Agent:
         if self.player == player:
             self.cards.remove(card)
 
-        if card == Cards.BARON and self.player == loser:
-            self.cards.remove(discard)
-        elif card == Cards.PRINCE and self.player == target:
-            self.cards.remove(discard)
-            self.cards.append(new_card)
-        elif card == Cards.KING and self.player in (player, target):
-            del self.cards[0]
-            self.cards.append(other_card)
+        if target is not None and not self.observer.players[target].handmaiden:
+            if card == Cards.BARON and self.player == loser:
+                self.cards.remove(discard)
+            elif card == Cards.PRINCE and self.player == target:
+                self.cards.remove(discard)
+                self.cards.append(new_card)
+            elif card == Cards.KING and self.player in (player, target):
+                del self.cards[0]
+                self.cards.append(other_card)
 
 class LowballAgent(Agent):
     def __init__(self, player, names):
@@ -66,18 +67,19 @@ class LowballAgent(Agent):
         player = kw['player']
         target = kw.get('target', None)
 
-        if player == self.player:
-            if card == Cards.PRIEST:
-                Log.print('ai: %s has card %s' % (self.names[target], Cards.name(kw['other_card'])))
-            elif card == Cards.KING:
-                Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
-        elif target == self.player:
-            if card == Cards.BARON and kw.get('loser', None) == self.player:
-                Log.print('ai: Winning card was %s' % Cards.name(kw['other_card']))
-            elif card == Cards.PRINCE:
-                Log.print('ai: %s draws card %s' % (self.name, Cards.name(kw['new_card'])))
-            elif card == Cards.KING:
-                Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
+        if target and not self.observer.players[target].handmaiden:
+            if player == self.player:
+                if card == Cards.PRIEST:
+                    Log.print('ai: %s has card %s' % (self.names[target], Cards.name(kw['other_card'])))
+                elif card == Cards.KING:
+                    Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
+            elif target == self.player:
+                if card == Cards.BARON and kw.get('loser', None) == self.player:
+                    Log.print('ai: Winning card was %s' % Cards.name(kw['other_card']))
+                elif card == Cards.PRINCE:
+                    Log.print('ai: %s draws card %s' % (self.name, Cards.name(kw['new_card'])))
+                elif card == Cards.KING:
+                    Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
 
     def _most_likely(self, exclude_card=None):
         lst = []
@@ -218,38 +220,43 @@ class ConsoleAgent(Agent):
         if discard:
             self.discarded[discard] += 1
 
-        if card == Cards.GUARD:
-            challenge = kw['challenge']
-            print('%s is accused of having card %s' % (self.names[target], Cards.name(challenge)))
-            if discard:
-                print('%s discards card %s' % (self.names[target], Cards.name(discard)))
-                print('%s is out' % self.names[target])
+        if target:
+            if self.observer.players[target].handmaiden:
+                print('%s is unaffected due to HANDMAIDEN' % self.names[target])
             else:
-                print('%s does not have card %s' % (self.names[target], Cards.name(challenge)))
-        elif card == Cards.PRIEST:
-            other_card = kw.get('other_card', None)
-            if other_card:
-                print('%s has card %s' % (self.names[target], Cards.name(other_card)))
-        elif card == Cards.BARON:
-            loser = kw.get('loser', None)
-            if loser is not None:
-                print('%s loses challenge, discards card %s' % (self.names[loser], Cards.name(discard)))
-                print('%s is out' % self.names[loser])
-                other_card = kw.get('other_card', None)
-                if other_card:
-                    print('Winning card was %s' % Cards.name(other_card))
-        elif card == Cards.PRINCE:
-            print('%s discards card %s' % (self.names[target], Cards.name(discard)))
-            if discard == Cards.PRINCESS:
-                print('%s is out' % self.names[target])
-            new_card = kw.get('new_card', None)
-            if new_card:
-                print('%s draws new card %s' % (self.names[target], Cards.name(new_card)))
-        elif card == Cards.KING:
-            other_card = kw.get('other_card', None)
-            if other_card:
-                print('%s now has card %s' % (self.names[target], Cards.name(other_card)))
-        elif card == Cards.PRINCESS:
+                if card == Cards.GUARD:
+                    challenge = kw['challenge']
+                    print('%s is accused of having card %s' % (self.names[target], Cards.name(challenge)))
+                    if discard:
+                        print('%s discards card %s' % (self.names[target], Cards.name(discard)))
+                        print('%s is out' % self.names[target])
+                    else:
+                        print('%s does not have card %s' % (self.names[target], Cards.name(challenge)))
+                elif card == Cards.PRIEST:
+                    other_card = kw.get('other_card', None)
+                    if other_card:
+                        print('%s has card %s' % (self.names[target], Cards.name(other_card)))
+                elif card == Cards.BARON:
+                    loser = kw.get('loser', None)
+                    if loser is not None:
+                        print('%s loses challenge, discards card %s' % (self.names[loser], Cards.name(discard)))
+                        print('%s is out' % self.names[loser])
+                        other_card = kw.get('other_card', None)
+                        if other_card:
+                            print('Winning card was %s' % Cards.name(other_card))
+                elif card == Cards.PRINCE:
+                    print('%s discards card %s' % (self.names[target], Cards.name(discard)))
+                    if discard == Cards.PRINCESS:
+                        print('%s is out' % self.names[target])
+                    new_card = kw.get('new_card', None)
+                    if new_card:
+                        print('%s draws new card %s' % (self.names[target], Cards.name(new_card)))
+                elif card == Cards.KING:
+                    other_card = kw.get('other_card', None)
+                    if other_card:
+                        print('%s now has card %s' % (self.names[target], Cards.name(other_card)))
+
+        if card == Cards.PRINCESS:
             print('%s is out' % self.names[player])
         print()
 
