@@ -102,7 +102,7 @@ class Dealer:
             else:
                 self.agents[i].report_play(**report)
 
-    def do_round(self):
+    def do_round(self, start_player):
         self.deck.reset()
         for i in range(len(self.agents)):
             card = self.deck.draw()
@@ -111,7 +111,8 @@ class Dealer:
             self.agent_info[i].out = False
             self.agents[i].start_round(card)
 
-        current = 0
+        current = start_player
+        Log.print('dealer: Round starts with %s' % self.agents[current].name)
         while self.deck.remaining() > 1:
             if not self.agent_info[current].out:
                 card = self.deck.draw()
@@ -151,17 +152,18 @@ class Dealer:
         for agent in self.agents:
             agent.end_round(cards, winner)
 
+        return winner
+
     def do_game(self):
+        start_player = 0
         winner = None
 
-        while winner is None:
-            self.do_round()
-
-            for i in range(len(self.agent_info)):
-                if self.agent_info[i].score == 4:
-                    winner = i
+        while True:
+            winner = self.do_round(start_player)
+            if winner:
+                start_player = winner
+                if self.agent_info[winner].score == 4:
                     break
 
         for agent in self.agents:
             agent.end_game(winner)
-
