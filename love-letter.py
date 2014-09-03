@@ -20,7 +20,7 @@ names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
 agents = [agent.LowballAgent(0, names), agent.LowballAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
 bullpen = Bullpen(agents)
 
-num_games = 1000
+num_games = 250
 wins = bullpen.run_games(num_games)
 print('Final statistics:')
 for i in range(len(agents)):
