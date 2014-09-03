@@ -192,6 +192,8 @@ class Dealer:
         return winner
 
     def do_game(self):
+        for i in range(len(self.agents)):
+            self.agent_info[i].score = 0
         start_player = 0
         winner = None
 
@@ -200,10 +202,12 @@ class Dealer:
 
         while True:
             winner = self.do_round(start_player)
-            if winner:
+            if winner is not None:
                 start_player = winner
                 if self.agent_info[winner].score == 4:
                     break
 
         for agent in self.agents:
             agent.end_game(winner)
+
+        return winner

@@ -79,7 +79,7 @@ class LowballAgent(Agent):
             elif target == self.player:
                 if card == Cards.BARON and kw.get('loser', None) == self.player:
                     Log.print('ai: Winning card was %s' % Cards.name(kw['other_card']))
-                elif card == Cards.PRINCE:
+                elif card == Cards.PRINCE and kw['discard'] != Cards.PRINCESS:
                     Log.print('ai: %s draws card %s' % (self.name, Cards.name(kw['new_card'])))
                 elif card == Cards.KING:
                     Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
@@ -90,6 +90,7 @@ class LowballAgent(Agent):
             if player.number != self.player and not player.out:
                 (card, certainty) = player.cards.most_likely(exclude_card)
                 lst.append((player, card, certainty))
+
 
         lst = sorted(lst, key=lambda x: x[0].score, reverse=True)
         lst = sorted(lst, key=lambda x: x[2], reverse=True)
@@ -190,6 +191,7 @@ class LowballAgent(Agent):
                         (player, value) = self._highest_expected_value()
                         ret['target'] = player.number
                     break
+
         return ret
 
 class ConsoleAgent(Agent):
