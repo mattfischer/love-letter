@@ -7,10 +7,12 @@ from log import Log
 class Agent:
     def __init__(self, player, names):
         self.player = player
-        self.names = names
         self.name = names[player]
         self.observer = Observer(names)
         self.cards = []
+
+    def __str__(self):
+        return self.name
 
     def start_game(self):
         self.observer.start_game()
@@ -73,7 +75,7 @@ class LowballAgent(Agent):
         if target and not self.observer.players[target].handmaiden:
             if player == self.player:
                 if card == Cards.PRIEST:
-                    Log.print('ai: %s has card %s' % (self.names[target], Cards.name(kw['other_card'])))
+                    Log.print('ai: %s has card %s' % (self.observer.players[target], Cards.name(kw['other_card'])))
                 elif card == Cards.KING:
                     Log.print('ai: %s now has card %s' % (self.name, Cards.name(kw['other_card'])))
             elif target == self.player:
@@ -176,24 +178,24 @@ class LowballAgent(Agent):
         self.observer.print_state('ai')
         ret = self._get_required_play()
         if not ret:
-            for card in range(Cards.NUM_CARDS):
-                if card in self.cards:
-                    other = self.cards[0] if self.cards[1] == card else self.cards[1]
-                    ret = {'card': card}
-                    if card == Cards.GUARD:
-                        (player, card, certainty) = self._most_likely(exclude_card=Cards.GUARD)
-                        ret['target'] = player.number
-                        ret['challenge'] = card
-                    elif card == Cards.PRIEST:
-                        (player, card, certainty) = self._least_likely()
-                        ret['target'] = player.number
-                    elif card == Cards.BARON:
-                        (player, certainty) = self._most_likely_less_than(other)
-                        ret['target'] = player.number
-                    elif card in (Cards.PRINCE, Cards.KING):
-                        (player, value) = self._highest_expected_value()
-                        ret['target'] = player.number
-                    break
+            cards = sorted(self.cards)
+            card = cards[0]
+            other_card = cards[1]
+
+            ret = {'card': card}
+            if card == Cards.GUARD:
+                (player, card, certainty) = self._most_likely(exclude_card=Cards.GUARD)
+                ret['target'] = player.number
+                ret['challenge'] = card
+            elif card == Cards.PRIEST:
+                (player, card, certainty) = self._least_likely()
+                ret['target'] = player.number
+            elif card == Cards.BARON:
+                (player, certainty) = self._most_likely_less_than(other_card)
+                ret['target'] = player.number
+            elif card in (Cards.PRINCE, Cards.KING):
+                (player, value) = self._highest_expected_value()
+                ret['target'] = player.number
 
         return ret
 
@@ -204,9 +206,7 @@ class ConsoleAgent(Agent):
     def start_round(self, card):
         super(ConsoleAgent, self).start_round(card)
         print('%s starts with card %s' % (self.name, Cards.name(card)))
-        self.discarded = []
-        for card in range(Cards.NUM_CARDS):
-            self.discarded.append(0)
+        self.discarded = [0 for i in range(Cards.NUM_CARDS)]
 
     def report_draw(self, card):
         super(ConsoleAgent, self).report_draw(card)
@@ -221,60 +221,60 @@ class ConsoleAgent(Agent):
         target = kw.get('target', None)
         discard = kw.get('discard', None)
         if target is not None:
-            print('%s plays card %s on %s' %(self.names[player], Cards.name(card), self.names[target]))
+            print('%s plays card %s on %s' %(self.observer.players[player], Cards.name(card), self.observer.players[target]))
         else:
-            print('%s plays card %s' % (self.names[player], Cards.name(card)))
+            print('%s plays card %s' % (self.observer.players[player], Cards.name(card)))
 
         if discard:
             self.discarded[discard] += 1
 
         if target:
             if self.observer.players[target].handmaiden:
-                print('%s is unaffected due to HANDMAIDEN' % self.names[target])
+                print('%s is unaffected due to HANDMAIDEN' % self.observer.players[target])
             else:
                 if card == Cards.GUARD:
                     challenge = kw['challenge']
-                    print('%s is accused of having card %s' % (self.names[target], Cards.name(challenge)))
+                    print('%s is accused of having card %s' % (self.observer.players[target], Cards.name(challenge)))
                     if discard:
-                        print('%s discards card %s' % (self.names[target], Cards.name(discard)))
-                        print('%s is out' % self.names[target])
+                        print('%s discards card %s' % (self.observer.players[target], Cards.name(discard)))
+                        print('%s is out' % self.observer.players[target])
                     else:
-                        print('%s does not have card %s' % (self.names[target], Cards.name(challenge)))
+                        print('%s does not have card %s' % (self.observer.players[target], Cards.name(challenge)))
                 elif card == Cards.PRIEST:
                     other_card = kw.get('other_card', None)
                     if other_card:
-                        print('%s has card %s' % (self.names[target], Cards.name(other_card)))
+                        print('%s has card %s' % (self.observer.players[target], Cards.name(other_card)))
                 elif card == Cards.BARON:
                     loser = kw.get('loser', None)
                     if loser is not None:
-                        print('%s loses challenge, discards card %s' % (self.names[loser], Cards.name(discard)))
-                        print('%s is out' % self.names[loser])
+                        print('%s loses challenge, discards card %s' % (self.observer.players[loser], Cards.name(discard)))
+                        print('%s is out' % self.observer.players[loser])
                         other_card = kw.get('other_card', None)
                         if other_card:
                             print('Winning card was %s' % Cards.name(other_card))
                 elif card == Cards.PRINCE:
-                    print('%s discards card %s' % (self.names[target], Cards.name(discard)))
+                    print('%s discards card %s' % (self.observer.players[target], Cards.name(discard)))
                     if discard == Cards.PRINCESS:
-                        print('%s is out' % self.names[target])
+                        print('%s is out' % self.observer.players[target])
                     new_card = kw.get('new_card', None)
                     if new_card:
-                        print('%s draws new card %s' % (self.names[target], Cards.name(new_card)))
+                        print('%s draws new card %s' % (self.observer.players[target], Cards.name(new_card)))
                 elif card == Cards.KING:
                     other_card = kw.get('other_card', None)
                     if other_card:
-                        print('%s now has card %s' % (self.names[target], Cards.name(other_card)))
+                        print('%s now has card %s' % (self.observer.players[target], Cards.name(other_card)))
 
         if card == Cards.PRINCESS:
-            print('%s is out' % self.names[player])
+            print('%s is out' % self.observer.players[player])
         print()
 
     def end_round(self, cards, winner):
         super(ConsoleAgent, self).end_round(cards, winner)
         print('Round is over')
         print('Final cards:')
-        for i in range(len(cards)):
-            if cards[i] is not None:
-                print('  %s: %s' % (self.observer.players[i].name, Cards.name(cards[i])))
+        for (i, card) in enumerate(cards):
+            if card is not None:
+                print('  %s: %s' % (self.observer.players[i].name, Cards.name(card)))
 
         if winner is None:
             print('Tie: No winner')

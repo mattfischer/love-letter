@@ -5,7 +5,6 @@ class Player:
     def __init__(self, number, name):
         self.number = number
         self.name = name
-        self.start_game()
 
     def start_game(self):
         self.score = 0
@@ -21,9 +20,7 @@ class Player:
 
 class Observer:
     def __init__(self, names):
-        self.players = []
-        for i in range(len(names)):
-            self.players.append(Player(i, names[i]))
+        self.players = [Player(i, name) for (i, name) in enumerate(names)]
 
     def _discard(self, card, exclude_player=None):
         self.deck_set.remove(card)
@@ -32,8 +29,8 @@ class Observer:
                 player.cards.remove(card)
 
     def start_game(self):
-        for p in self.players:
-            p.start_game()
+        for player in self.players:
+            player.start_game()
 
     def start_round(self, player, card):
         self.deck_set = CardSet.full()
@@ -119,7 +116,7 @@ class Observer:
             self.players[winner].score += 1
 
     def print_state(self, zone):
-        Log.print('%s: Player scores: %s' % (zone, '  '.join(['%s: %i' % (player.name, player.score) for player in self.players])))
+        Log.print('%s: Player scores: %s' % (zone, '  '.join(['%s: %i' % (player, player.score) for player in self.players])))
         Log.print('%s: Deck set: %s' % (zone, self.deck_set))
-        for p in self.players:
-            Log.print('%s: %s set: %s' % (zone, p, p.cards))
+        for player in self.players:
+            Log.print('%s: %s set: %s' % (zone, player, player.cards))

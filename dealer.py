@@ -10,8 +10,7 @@ class Deck:
     def reset(self):
         self.cards = []
         for card in range(Cards.GUARD, Cards.NUM_CARDS):
-            for i in range(Cards.start_count(card)):
-                self.cards.append(card)
+            self.cards.extend([card for i in range(Cards.start_count(card))])
         random.shuffle(self.cards)
 
     def draw(self):
@@ -21,19 +20,18 @@ class Deck:
         return len(self.cards)
 
 class AgentInfo:
-    def __init__(self):
+    def __init__(self, number, agent):
         self.cards = []
         self.out = False
         self.score = 0
         self.handmaiden = False
+        self.agent = agent
 
 class Dealer:
     def __init__(self, agents):
         self.agents = agents
         self.deck = Deck()
-        self.agent_info = []
-        for agent in self.agents:
-            self.agent_info.append(AgentInfo())
+        self.agent_info = [AgentInfo(i, agent) for (i, agent) in enumerate(self.agents)]
 
     def _validate_play(self, play, player):
         if 'card' not in play:
@@ -136,48 +134,38 @@ class Dealer:
 
     def do_round(self, start_player):
         self.deck.reset()
-        for i in range(len(self.agents)):
+        for info in self.agent_info:
             card = self.deck.draw()
-            Log.print('dealer: Dealing %s to %s' % (Cards.name(card), self.agents[i].name))
-            self.agent_info[i].cards = [card]
-            self.agent_info[i].out = False
-            self.agent_info[i].handmaiden = False
-            self.agents[i].start_round(card)
+            Log.print('dealer: Dealing %s to %s' % (Cards.name(card), info.agent))
+            info.cards = [card]
+            info.out = False
+            info.handmaiden = False
+            info.agent.start_round(card)
 
         current = start_player
         Log.print('dealer: Round starts with %s' % self.agents[current].name)
         while self.deck.remaining() > 1:
-            if not self.agent_info[current].out:
+            info = self.agent_info[current]
+            if not info.out:
                 card = self.deck.draw()
-                Log.print('dealer: Dealing %s to %s' % (Cards.name(card), self.agents[current].name))
-                self.agent_info[current].cards.append(card)
-                self.agents[current].report_draw(card)
+                Log.print('dealer: Dealing %s to %s' % (Cards.name(card), info.agent))
+                info.cards.append(card)
+                info.agent.report_draw(card)
 
-                play = self.agents[current].get_play()
+                play = info.agent.get_play()
                 if not self._validate_play(play, current):
                     Log.print('dealer: Invalid play %s' % play)
                     continue
 
                 self._process_play(play, current)
 
-            players_in = 0
-            for info in self.agent_info:
-                if info.out == False:
-                    players_in += 1
-
+            players_in = len([info for info in self.agent_info if not info.out])
             if players_in == 1:
                 break
 
-            current += 1
-            if current >= len(self.agents):
-                current = 0
+            current = (current + 1) % len(self.agents)
 
-        cards = []
-        for info in self.agent_info:
-            if info.out:
-                cards.append(None)
-            else:
-                cards.append(info.cards[0])
+        cards = [None if info.out else info.cards[0] for info in self.agent_info]
 
         lst = [i for i in range(len(cards))]
         lst = sorted(lst, key=lambda x: cards[x] or 0)
@@ -192,8 +180,8 @@ class Dealer:
         return winner
 
     def do_game(self):
-        for i in range(len(self.agents)):
-            self.agent_info[i].score = 0
+        for info in self.agent_info:
+            info.score = 0
         start_player = 0
         winner = None
 
