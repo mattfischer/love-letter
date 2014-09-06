@@ -17,11 +17,12 @@ class Bullpen:
         return self.wins
 
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
-agents = [agent.LowballAgent(0, names), agent.LowballAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
+agents = [agent.EndgameAgent(0, names), agent.LowballAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
 bullpen = Bullpen(agents)
 
-num_games = 250
+random.seed(1)
+num_games = 500
 wins = bullpen.run_games(num_games)
 print('Final statistics:')
 for i in range(len(agents)):
-    print('%s: %i (%i%%)' % (agents[i].name, wins[i], wins[i] * 100 / num_games))
+    print('%s (%s): %i (%i%%)' % (agents[i].name, agents[i].__class__.__name__, wins[i], wins[i] * 100 / num_games))

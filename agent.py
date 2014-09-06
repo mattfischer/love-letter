@@ -199,6 +199,37 @@ class LowballAgent(Agent):
 
         return ret
 
+class EndgameAgent(LowballAgent):
+    def get_play(self):
+        if self.observer.deck_size <= len(self.observer.players):
+            if Cards.PRINCE in self.cards:
+                other_card = self.cards[0] if self.cards[1] == Cards.PRINCE else self.cards[1]
+                deck_value = self.observer.deck_set.expected_value()
+                if deck_value > other_card and deck_value > Cards.PRINCE:
+                    ret = {'card' : Cards.PRINCE, 'target' : self.player }
+                    return ret
+                else:
+                    values = [(i, player.cards.expected_value()) for (i, player) in enumerate(self.observer.players)]
+                    values = sorted(values, key=lambda x: x[1], reverse=True)
+                    for (i, value) in values:
+                        if self.observer.players[i].out or i == self.player:
+                            continue
+                        if value > deck_value:
+                            ret = {'card' : Cards.PRINCE, 'target' : i}
+                            return ret
+            elif Cards.KING in self.cards:
+                other_card = self.cards[0] if self.cards[1] == Cards.KING else self.cards[1]
+                values = [(i, player.cards.expected_value()) for (i, player) in enumerate(self.observer.players)]
+                values = sorted(values, key=lambda x: x[1], reverse=True)
+                for (i, value) in values:
+                    if self.observer.players[i].out or i == self.player:
+                        continue
+                    if value > other_card and value > Cards.KING:
+                        ret = {'card' : Cards.KING, 'target' : i}
+                        return ret
+
+        return super(EndgameAgent, self).get_play()
+
 class ConsoleAgent(Agent):
     def __init__(self, player, names):
         super(ConsoleAgent, self).__init__(player, names)
@@ -220,42 +251,23 @@ class ConsoleAgent(Agent):
         self.discarded[card] += 1
         target = kw.get('target', None)
         discard = kw.get('discard', None)
-        if target is not None:
-            print('%s plays card %s on %s' %(self.observer.players[player], Cards.name(card), self.observer.players[target]))
-        else:
-            print('%s plays card %s' % (self.observer.players[player], Cards.name(card)))
 
         if discard:
             self.discarded[discard] += 1
 
         if target:
-            if self.observer.players[target].handmaiden:
-                print('%s is unaffected due to HANDMAIDEN' % self.observer.players[target])
-            else:
-                if card == Cards.GUARD:
-                    challenge = kw['challenge']
-                    print('%s is accused of having card %s' % (self.observer.players[target], Cards.name(challenge)))
-                    if discard:
-                        print('%s discards card %s' % (self.observer.players[target], Cards.name(discard)))
-                        print('%s is out' % self.observer.players[target])
-                    else:
-                        print('%s does not have card %s' % (self.observer.players[target], Cards.name(challenge)))
-                elif card == Cards.PRIEST:
+            if not self.observer.players[target].handmaiden:
+                if card == Cards.PRIEST:
                     other_card = kw.get('other_card', None)
                     if other_card:
                         print('%s has card %s' % (self.observer.players[target], Cards.name(other_card)))
                 elif card == Cards.BARON:
                     loser = kw.get('loser', None)
                     if loser is not None:
-                        print('%s loses challenge, discards card %s' % (self.observer.players[loser], Cards.name(discard)))
-                        print('%s is out' % self.observer.players[loser])
                         other_card = kw.get('other_card', None)
                         if other_card:
                             print('Winning card was %s' % Cards.name(other_card))
                 elif card == Cards.PRINCE:
-                    print('%s discards card %s' % (self.observer.players[target], Cards.name(discard)))
-                    if discard == Cards.PRINCESS:
-                        print('%s is out' % self.observer.players[target])
                     new_card = kw.get('new_card', None)
                     if new_card:
                         print('%s draws new card %s' % (self.observer.players[target], Cards.name(new_card)))
@@ -263,29 +275,6 @@ class ConsoleAgent(Agent):
                     other_card = kw.get('other_card', None)
                     if other_card:
                         print('%s now has card %s' % (self.observer.players[target], Cards.name(other_card)))
-
-        if card == Cards.PRINCESS:
-            print('%s is out' % self.observer.players[player])
-        print()
-
-    def end_round(self, cards, winner):
-        super(ConsoleAgent, self).end_round(cards, winner)
-        print('Round is over')
-        print('Final cards:')
-        for (i, card) in enumerate(cards):
-            if card is not None:
-                print('  %s: %s' % (self.observer.players[i].name, Cards.name(card)))
-
-        if winner is None:
-            print('Tie: No winner')
-        else:
-            print('Winner: %s' % self.observer.players[winner].name)
-        print()
-
-    def end_game(self, winner):
-        super(ConsoleAgent, self).end_game(winner)
-        print('Game is over')
-        print('Winner: %s' % self.observer.players[winner].name)
 
     def get_play(self):
         card = None

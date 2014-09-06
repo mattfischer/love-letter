@@ -59,6 +59,43 @@ class Dealer:
 
         return True
 
+    def _report_play(self, *k, **kw):
+        player = kw['player']
+        card = kw['card']
+        target = kw.get('target', None)
+        discard = kw.get('discard', None)
+
+        Log.print('report: ')
+        if target is not None:
+            Log.print('report: %s plays card %s on %s' %(self.agents[player], Cards.name(card), self.agents[target]))
+        else:
+            Log.print('report: %s plays card %s' % (self.agents[player], Cards.name(card)))
+
+        if target:
+            if self.agent_info[target].handmaiden:
+                Log.print('report: %s is unaffected due to HANDMAIDEN' % self.agents[target])
+            else:
+                if card == Cards.GUARD:
+                    challenge = kw['challenge']
+                    Log.print('report: %s is accused of having card %s' % (self.agents[target], Cards.name(challenge)))
+                    if discard:
+                        Log.print('report: %s discards card %s' % (self.agents[target], Cards.name(discard)))
+                        Log.print('report: %s is out' % self.agents[target])
+                    else:
+                        Log.print('report: %s does not have card %s' % (self.agents[target], Cards.name(challenge)))
+                elif card == Cards.BARON:
+                    loser = kw.get('loser', None)
+                    if loser is not None:
+                        Log.print('report: %s loses challenge, discards card %s' % (self.agents[loser], Cards.name(discard)))
+                        Log.print('report: %s is out' % self.agents[loser])
+                elif card == Cards.PRINCE:
+                    Log.print('report: %s discards card %s' % (self.agents[target], Cards.name(discard)))
+                    if discard == Cards.PRINCESS:
+                        Log.print('report: %s is out' % self.agents[target])
+
+        if card == Cards.PRINCESS:
+            Log.print('report: %s is out' % self.agents[player])
+
     def _process_play(self, play, player):
         report = {}
         report_player = {}
@@ -66,9 +103,9 @@ class Dealer:
         card = play['card']
         report['card'] = card
         report['player'] = player
-        self.agent_info[player].handmaiden = False
-        self.agent_info[player].cards.remove(card)
         player_info = self.agent_info[player]
+        player_info.handmaiden = False
+        player_info.cards.remove(card)
 
         target = play.get('target', None)
         if target is not None:
@@ -122,15 +159,18 @@ class Dealer:
         elif card == Cards.PRINCESS:
             player_info.out = True
 
-        report_player.update(report)
-        report_target.update(report)
+        self._report_play(**report)
+
         for i in range(len(self.agents)):
+            report_agent = {}
+            report_agent.update(report)
+
             if i == player:
-                self.agents[i].report_play(**report_player)
-            elif target is not None and i == target:
-                self.agents[i].report_play(**report_target)
-            else:
-                self.agents[i].report_play(**report)
+                report_agent.update(report_player)
+            if target is not None and i == target:
+                report_agent.update(report_target)
+
+            self.agents[i].report_play(**report_agent)
 
     def do_round(self, start_player):
         self.deck.reset()
@@ -167,11 +207,21 @@ class Dealer:
 
         cards = [None if info.out else info.cards[0] for info in self.agent_info]
 
+        Log.print('report:')
+        Log.print('report: Round is over')
+        Log.print('report: Final cards:')
+        for (i, card) in enumerate(cards):
+            if card is not None:
+                Log.print('report:   %s: %s' % (self.agents[i], Cards.name(card)))
+
         lst = [i for i in range(len(cards))]
         lst = sorted(lst, key=lambda x: cards[x] or 0)
         winner = None
-        if cards[lst[-1]] != cards[lst[-2]]:
+        if cards[lst[-1]] == cards[lst[-2]]:
+            Log.print('report: Tie: No winner')
+        else:
             winner = lst[-1]
+            Log.print('report: Winner: %s' % self.agents[winner])
             self.agent_info[winner].score += 1
 
         for agent in self.agents:
@@ -197,5 +247,9 @@ class Dealer:
 
         for agent in self.agents:
             agent.end_game(winner)
+
+        Log.print('report:')
+        Log.print('report: Game is over')
+        Log.print('report: Winner: %s' % self.agents[winner])
 
         return winner

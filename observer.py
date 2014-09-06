@@ -34,6 +34,8 @@ class Observer:
 
     def start_round(self, player, card):
         self.deck_set = CardSet.full()
+        self.deck_size = Cards.DECK_SIZE - len(self.players)
+
         for p in self.players:
             p.start_round()
         player = self.players[player]
@@ -46,6 +48,7 @@ class Observer:
         if card:
             player.next_card.clear(exclude=card)
             self._discard(card)
+            self.deck_size -= 1
 
     def report_play(self, *k, **kw):
         player = self.players[kw['player']]
@@ -57,6 +60,7 @@ class Observer:
 
         if player.next_card is None:
             player.next_card = CardSet(self.deck_set)
+            self.deck_size -= 1
 
         player.handmaiden = False
 
@@ -95,6 +99,7 @@ class Observer:
                 if discard == Cards.PRINCESS:
                     target.out = True
                 else:
+                    self.deck_size -= 1
                     target.cards = CardSet(self.deck_set)
                     if 'new_card' in kw:
                         target.cards.clear(kw['new_card'])

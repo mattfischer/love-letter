@@ -9,6 +9,8 @@ class Cards:
     PRINCESS = 8
     NUM_CARDS = 9
 
+    DECK_SIZE = 16
+
     names = [
         'NONE',
         'GUARD',
