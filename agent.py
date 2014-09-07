@@ -241,9 +241,11 @@ class EndgameAgent(LowballAgent):
 class ConsoleAgent(Agent):
     def __init__(self, player, names):
         super(ConsoleAgent, self).__init__(player, names)
+        Log.enable('report', stripped=True)
 
     def start_round(self, card):
         super(ConsoleAgent, self).start_round(card)
+        print()
         print('%s starts with card %s' % (self.name, Cards.name(card)))
         self.discarded = [0 for i in range(Cards.NUM_CARDS)]
 
@@ -290,6 +292,7 @@ class ConsoleAgent(Agent):
         self.cards = sorted(self.cards)
         play = {}
 
+        print()
         s = '  '.join(['%s(%i)' % (player.name, player.score) for player in self.observer.players if not player.out])
         print('Players still in round: %s' % s)
         s = '  '.join('%s(%i)' % (Cards.name(card), self.discarded[card]) for card in range(Cards.NUM_CARDS) if self.discarded[card] > 0)
@@ -321,7 +324,6 @@ class ConsoleAgent(Agent):
                 print('  Must discard COUNTESS')
                 card = None
 
-        print()
         play['card'] = card
 
         if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
@@ -337,6 +339,7 @@ class ConsoleAgent(Agent):
 
             target = None
             while target is None:
+                print()
                 s = '  '.join(['[%i] %s' % (player.number + 1, player.name) for player in players])
                 print('Players: %s' % s)
                 print('Enter target player: ', end='')
@@ -354,12 +357,12 @@ class ConsoleAgent(Agent):
                 if target is None:
                     print('  Invalid selection')
 
-            print()
             play['target'] = target
 
         if card == Cards.GUARD:
             challenge = None
             while challenge is None:
+                print()
                 s = '  '.join(['[%i] %s' % (card, Cards.name(card)) for card in range(Cards.GUARD, Cards.NUM_CARDS)])
                 print('Cards: %s' % s)
                 print('Enter challenge card: ', end='')
@@ -375,7 +378,6 @@ class ConsoleAgent(Agent):
                 if challenge is None:
                     print('  Invalid selection')
 
-            print()
             play['challenge'] = challenge
 
         return play
