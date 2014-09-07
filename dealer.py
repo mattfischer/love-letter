@@ -71,7 +71,7 @@ class Dealer:
         else:
             Log.print('report: %s plays card %s' % (self.agents[player], Cards.name(card)))
 
-        if target:
+        if target is not None:
             if self.agent_info[target].handmaiden:
                 Log.print('report: %s is unaffected due to HANDMAIDEN' % self.agents[target])
             else:
