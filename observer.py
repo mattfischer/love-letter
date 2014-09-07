@@ -21,6 +21,7 @@ class Player:
 class Observer:
     def __init__(self, names):
         self.players = [Player(i, name) for (i, name) in enumerate(names)]
+        self.saw_draw = {}
 
     def _discard(self, card, exclude_player=None):
         self.deck_set.remove(card)
@@ -35,6 +36,7 @@ class Observer:
     def start_round(self, player, card):
         self.deck_set = CardSet.full()
         self.deck_size = Cards.DECK_SIZE - len(self.players)
+        self.saw_draw = set()
 
         for p in self.players:
             p.start_round()
@@ -46,6 +48,7 @@ class Observer:
         player = self.players[player]
         player.next_card = CardSet(self.deck_set)
         if card:
+            self.saw_draw.add(player)
             player.next_card.clear(exclude=card)
             self._discard(card)
             self.deck_size -= 1
@@ -67,7 +70,10 @@ class Observer:
         if player.cards.contains(card):
             player.cards = player.next_card
 
-        self._discard(card)
+        if player in self.saw_draw:
+            self.saw_draw.remove(player)
+        else:
+            self._discard(card)
 
         if target and not target.handmaiden:
             if card == Cards.GUARD:
