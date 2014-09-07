@@ -54,6 +54,12 @@ class Agent:
                 del self.cards[0]
                 self.cards.append(other_card)
 
+    def _get_required_play(self):
+        if Cards.COUNTESS in self.cards:
+            if Cards.PRINCE in self.cards or Cards.KING in self.cards:
+                return {'card': Cards.COUNTESS}
+        return None
+
 class LowballAgent(Agent):
     def __init__(self, player, names):
         super(LowballAgent, self).__init__(player, names)
@@ -165,13 +171,6 @@ class LowballAgent(Agent):
         winner = lst[0]
         Log.print('ai: %s has highest expected hand value %f' % (winner[0].name, winner[1]))
         return winner
-
-
-    def _get_required_play(self):
-        if Cards.COUNTESS in self.cards:
-            if Cards.PRINCE in self.cards or Cards.KING in self.cards:
-                return {'card': Cards.COUNTESS}
-        return None
 
     def get_play(self):
         Log.print('ai: %s play options: %s %s' % (self.name, Cards.name(self.cards[0]), Cards.name(self.cards[1])))
@@ -380,3 +379,25 @@ class ConsoleAgent(Agent):
             play['challenge'] = challenge
 
         return play
+
+class RandomAgent(Agent):
+    def get_play(self):
+        ret = self._get_required_play()
+        if not ret:
+            ret = {}
+            cards = list(self.cards)
+            if Cards.PRINCESS in cards:
+                cards.remove(Cards.PRINCESS)
+            card = random.choice(cards)
+            ret['card'] = card
+
+            if card in (Cards.GUARD, Cards.PRIEST, Cards.BARON, Cards.PRINCE, Cards.KING):
+                players = [i for i in range(len(self.observer.players)) if not self.observer.players[i].out]
+                if card != Cards.PRINCE:
+                    players.remove(self.player)
+                target = random.choice(players)
+                ret['target'] = target
+
+                if card == Cards.GUARD:
+                    ret['challenge'] = random.choice(range(Cards.PRIEST, Cards.NUM_CARDS))
+        return ret

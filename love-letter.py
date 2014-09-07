@@ -17,7 +17,7 @@ class Arena:
         return self.wins
 
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
-agents = [agent.EndgameAgent(0, names), agent.LowballAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
+agents = [agent.EndgameAgent(0, names), agent.RandomAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
 arena = Arena(agents)
 
 num_games = 2000
