@@ -185,14 +185,23 @@ class LowballAgent(Agent):
             ret = {'card': card}
             if card == Cards.GUARD:
                 (player, card, certainty) = self._most_likely(exclude_card=Cards.GUARD)
-                ret['target'] = player.number
-                ret['challenge'] = card
+                if other_card == Cards.HANDMAIDEN and certainty < 1:
+                    ret['card'] = Cards.HANDMAIDEN
+                else:
+                    ret['target'] = player.number
+                    ret['challenge'] = card
             elif card == Cards.PRIEST:
                 (player, card, certainty) = self._least_likely()
-                ret['target'] = player.number
+                if other_card == Cards.HANDMAIDEN:
+                    ret['card'] = Cards.HANDMAIDEN
+                else:
+                    ret['target'] = player.number
             elif card == Cards.BARON:
                 (player, certainty) = self._most_likely_less_than(other_card)
-                ret['target'] = player.number
+                if other_card == Cards.HANDMAIDEN and certainty < 1:
+                    ret['card'] = Cards.HANDMAIDEN
+                else:
+                    ret['target'] = player.number
             elif card in (Cards.PRINCE, Cards.KING):
                 (player, value) = self._highest_expected_value()
                 ret['target'] = player.number
