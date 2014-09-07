@@ -1,7 +1,7 @@
 import random
 import dealer, agent
 
-class Bullpen:
+class Arena:
     def __init__(self, agents):
         self.agents = agents
         self.dealer = dealer.Dealer(agents)
@@ -18,11 +18,10 @@ class Bullpen:
 
 names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
 agents = [agent.EndgameAgent(0, names), agent.LowballAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
-bullpen = Bullpen(agents)
+arena = Arena(agents)
 
-random.seed(1)
-num_games = 500
-wins = bullpen.run_games(num_games)
+num_games = 2000
+wins = arena.run_games(num_games)
 print('Final statistics:')
 for i in range(len(agents)):
     print('%s (%s): %i (%i%%)' % (agents[i].name, agents[i].__class__.__name__, wins[i], wins[i] * 100 / num_games))
