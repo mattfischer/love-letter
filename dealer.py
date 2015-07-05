@@ -1,4 +1,4 @@
-import random
+import random, time
 
 from log import Log
 from card import Cards
@@ -204,6 +204,7 @@ class Dealer:
                 break
 
             current = (current + 1) % len(self.agents)
+            time.sleep(1)
 
         cards = [None if info.out else info.cards[0] for info in self.agent_info]
 
