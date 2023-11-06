@@ -1,4 +1,4 @@
-import sys, random
+import sys, random, time
 
 from observer import Observer
 from card import Cards, CardSet
@@ -174,7 +174,7 @@ class LowballAgent(Agent):
 
     def get_play(self):
         Log.print('ai: %s play options: %s %s' % (self.name, Cards.name(self.cards[0]), Cards.name(self.cards[1])))
-        self.observer.print_state('ai')
+        self.observer.print_state('ai', self.player)
         ret = self._get_required_play()
         if not ret:
             cards = sorted(self.cards)
@@ -243,9 +243,19 @@ class ConsoleAgent(Agent):
         super(ConsoleAgent, self).__init__(player, names)
         Log.enable('report', stripped=True)
 
+    def start_game(self):
+        super(ConsoleAgent, self).start_game()
+        self.first_round = True
+
     def start_round(self, card):
         super(ConsoleAgent, self).start_round(card)
         print()
+        if not self.first_round:
+            print('Press Enter to begin next round')
+            sys.stdout.flush()
+            sys.stdin.readline()
+
+        self.first_round = False
         print('%s starts with card %s' % (self.name, Cards.name(card)))
         self.discarded = [0 for i in range(Cards.NUM_CARDS)]
 
@@ -285,6 +295,7 @@ class ConsoleAgent(Agent):
                     other_card = kw.get('other_card', None)
                     if other_card:
                         print('%s now has card %s' % (self.observer.players[target], Cards.name(other_card)))
+        time.sleep(1)
 
     def get_play(self):
         card = None

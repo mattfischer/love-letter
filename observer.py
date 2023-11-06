@@ -23,7 +23,7 @@ class Observer:
         self.players = [Player(i, name) for (i, name) in enumerate(names)]
         self.saw_draw = {}
 
-    def _discard(self, card, exclude_player=None):
+    def _reveal(self, card, exclude_player=None):
         self.deck_set.remove(card)
         for player in self.players:
             if player != exclude_player:
@@ -41,7 +41,7 @@ class Observer:
         for p in self.players:
             p.start_round()
         player = self.players[player]
-        self._discard(card, player)
+        self._reveal(card, player)
         player.cards.clear(card)
 
     def report_draw(self, player, card=None):
@@ -50,7 +50,7 @@ class Observer:
         if card:
             self.saw_draw.add(player)
             player.next_card.clear(exclude=card)
-            self._discard(card)
+            self._reveal(card)
             self.deck_size -= 1
 
     def report_play(self, *k, **kw):
@@ -73,13 +73,13 @@ class Observer:
         if player in self.saw_draw:
             self.saw_draw.remove(player)
         else:
-            self._discard(card)
+            self._reveal(card)
 
         if target and not target.handmaiden:
             if card == Cards.GUARD:
                 challenge = kw['challenge']
                 if discard:
-                    self._discard(discard)
+                    self._reveal(discard)
                     target.cards.clear()
                     target.out = True
                 else:
@@ -92,7 +92,7 @@ class Observer:
                 if loser is not None:
                     loser = self.players[loser]
                     winner = player if target == loser else target
-                    self._discard(discard)
+                    self._reveal(discard)
                     loser.cards.clear()
                     loser.out = True
                     other_card = kw.get('other_card', None)
@@ -101,7 +101,7 @@ class Observer:
                     else:
                         winner.cards.clear(cards=range(Cards.GUARD, discard + 1))
             elif card == Cards.PRINCE:
-                self._discard(discard)
+                self._reveal(discard)
                 if discard == Cards.PRINCESS:
                     target.out = True
                 else:
@@ -126,8 +126,9 @@ class Observer:
         if winner is not None:
             self.players[winner].score += 1
 
-    def print_state(self, zone):
+    def print_state(self, zone, exclude_player):
         Log.print('%s: Player scores: %s' % (zone, '  '.join(['%s: %i' % (player, player.score) for player in self.players])))
         Log.print('%s: Deck set: %s' % (zone, self.deck_set))
         for player in self.players:
-            Log.print('%s: %s set: %s' % (zone, player, player.cards))
+            if not player.out and player.number != exclude_player:
+                Log.print('%s: %s set: %s' % (zone, player, player.cards))

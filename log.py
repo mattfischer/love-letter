@@ -11,7 +11,7 @@ class Log:
 
         if zone is None or zone in Log.enabled_zones:
             if zone in Log.enabled_zones_stripped:
-                s = s[len(zone) + 1:].lstrip(' ')
+                s = s[len(zone) + 2:]
                 print(s)
             else:
                 print('* %s' % s)

@@ -16,7 +16,9 @@ class Arena:
 
         return self.wins
 
-if len(sys.argv) > 1 and sys.argv[1] == '--bullpen':
+
+if len(sys.argv) > 1 and sys.argv[1] == '--arena':
+    names = ['Alice', 'Bob', 'Charlie', 'Dave']
     agents = [agent.EndgameAgent(0, names), agent.RandomAgent(1, names), agent.LowballAgent(2, names), agent.LowballAgent(3, names)]
     arena = Arena(agents)
 
